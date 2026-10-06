@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Приглашение в кино ✨</title>
+  <!-- Библиотека конфетти -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 20%, #1f2438 0%, #10121d 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #f1f5f9;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .card {
+      background: rgba(30, 35, 54, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 28px;
+      padding: 36px 24px;
+      text-align: center;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    p.subtitle {
+      font-size: 16px;
+      color: #94a3b8;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* Блок с кнопками на первом шаге */
+    .buttons-invite {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      min-height: 70px;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 99px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-yes {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+      z-index: 2;
+    }
+    #btn-yes:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Убегающая кнопка «Нет» */
+    #btn-no {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: left 0.2s ease, top 0.2s ease;
+      z-index: 5;
+    }
+
+    /* Сетка фильмов */
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .movie-card {
+      background: rgba(18, 21, 33, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    }
+
+    .movie-card:hover {
+      box-shadow: 0 7px 14px rgba(139, 92, 246, 0.25), 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Выделенное состояние в мульти-режиме */
+    .movie-card.selected {
+      border-color: #a855f7;
+      box-shadow: 0 0 22px rgba(168, 85, 247, 0.45);
+    }
+
+    /* Постер-ссылка */
+    .poster-link {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 250px;
+      overflow: hidden;
+      background: #111;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .poster-link img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    .poster-link:hover img {
+      transform: scale(1.05);
+      filter: brightness(0.85);
+    }
+
+    .play-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(4px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 18px;
+      padding-left: 3px;
+      opacity: 0.9;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .poster-link:hover .play-badge {
+      transform: translate(-50%, -50%) scale(1.1);
+      background: rgba(99, 102, 241, 0.85);
+    }
+
+    .movie-info {
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .movie-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .trailer-link {
+      font-size: 13px;
+      color: #a5b4fc;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.12);
+      transition: background 0.2s ease;
+    }
+
+    .trailer-link:hover {
+      background: rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-choose {
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 10px;
+      background: #8b5cf6;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-choose:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    /* Кнопка внутри выбранной карточки */
+    .movie-card.selected .btn-choose {
+      background: #10b981;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+
+    /* Стили переключателя "Несколько фильмов" */
+    .multi-toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
+      padding: 8px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .multi-toggle-wrap:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      transition: 0.25s;
+      border-radius: 22px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .toggle-text {
+      font-size: 14px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* Контейнер кнопки подтверждения мультивыбора */
+    .multi-action-bar {
+      margin-top: 18px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #btn-confirm-movies {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      width: 100%;
+      max-width: 330px;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Экран завершения */
+    .chosen-badges-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 16px 0 24px;
+    }
+
+    .chosen-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 18px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 99px;
+      font-weight: 600;
+      color: #c7d2fe;
+      font-size: 15px;
+    }
+
+    /* Падающие сердечки на финальном экране */
+    .heart {
+      position: absolute;
+      top: -40px;
+      user-select: none;
+      pointer-events: none;
+      z-index: 10;
+      animation: fallHeart linear forwards;
+    }
+
+    @keyframes fallHeart {
+      0% {
+        top: -40px;
+        transform: translateX(0) rotate(0deg) scale(0.7);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.95;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      100% {
+        top: 105%;
+        transform: translateX(var(--drift)) rotate(var(--rot)) scale(1.15);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- ШАГ 1: Приглашение -->
+    <div class="card" id="step-invite">
+      <div style="font-size: 52px; margin-bottom: 12px;">🎬✨</div>
+      <h1>Пойдём в кино на свидание?</h1>
+      <p class="subtitle">Уютная атмосфера, попкорн и отличный вечер гарантированы.</p>
+      
+      <div class="buttons-invite">
+        <button class="btn" id="btn-yes">Да, пойдём!</button>
+        <button class="btn" id="btn-no">Нет</button>
+      </div>
+    </div>
+
+    <!-- ШАГ 2: Выбор фильма -->
+    <div class="card hidden" id="step-movies">
+      <div style="font-size: 42px; margin-bottom: 8px;">🍿</div>
+      <h1 id="step-movies-heading">Какой фильм выберем?</h1>
+      <p class="subtitle" id="step-movies-desc">Нажми на постер или ссылку, чтобы глянуть трейлер:</p>
+
+      <div class="movies-grid">
+        <!-- Фильм 1 -->
+        <div class="movie-card" data-title="Девятая планета">
+          <a class="poster-link" href="https://vkvideo.ru/video-181157148_456244915" target="_blank" rel="noopener" title="Смотреть трейлер">
+            <img src="poster1.jpg" alt="Девятая планета">
+            <div class="play-badge">▶</div>
+          </a>
+          <div class="movie-info">
+            <div class="movie-title">Девятая планета</div>
+            <a class="trailer-link" href="https://vkvideo.ru/video-181157148_456244915" target="_blank" rel="noopener">
+              ▶ Трейлер
+            </a>
+            <button class="btn-choose" onclick="handleMovieAction('Девятая планета')">Выбрать этот</button>
+          </div>
+        </div>
+
+        <!-- Фильм 2 -->
+        <div class="movie-card" data-title="Сердце зверя">
+          <a class="poster-link" href="https://rutube.ru/video/debf930dbd087ec5efcf0497c45c1645/?utm_source=embed&utm_medium=referral&utm_campaign=logo&utm_content=debf930dbd087ec5efcf0497c45c1645&utm_term=grinvich-cinema.ru&t=2" target="_blank" rel="noopener" title="Смотреть трейлер">
+            <img src="poster2.jpg" alt="Сердце зверя">
+            <div class="play-badge">▶</div>
+          </a>
+          <div class="movie-info">
+            <div class="movie-title">Сердце зверя</div>
+            <a class="trailer-link" href="https://rutube.ru/video/debf930dbd087ec5efcf0497c45c1645/?utm_source=embed&utm_medium=referral&utm_campaign=logo&utm_content=debf930dbd087ec5efcf0497c45c1645&utm_term=grinvich-cinema.ru&t=2" target="_blank" rel="noopener">
+              ▶ Трейлер
+            </a>
+            <button class="btn-choose" onclick="handleMovieAction('Сердце зверя')">Выбрать этот</button>
+          </div>
+        </div>
+
+        <!-- Фильм 3 -->
+        <div class="movie-card" data-title="Обитель зла">
+          <a class="poster-link" href="https://rutube.ru/video/acb55098ff72203d17e7fe22a09b5f3f/?utm_source=embed&utm_medium=referral&utm_campaign=logo&utm_content=acb55098ff72203d17e7fe22a09b5f3f&utm_term=grinvich-cinema.ru&t=4" target="_blank" rel="noopener" title="Смотреть трейлер">
+            <img src="poster3.jpg" alt="Обитель зла">
+            <div class="play-badge">▶</div>
+          </a>
+          <div class="movie-info">
+            <div class="movie-title">Обитель зла</div>
+            <a class="trailer-link" href="https://rutube.ru/video/acb55098ff72203d17e7fe22a09b5f3f/?utm_source=embed&utm_medium=referral&utm_campaign=logo&utm_content=acb55098ff72203d17e7fe22a09b5f3f&utm_term=grinvich-cinema.ru&t=4" target="_blank" rel="noopener">
+              ▶ Трейлер
+            </a>
+            <button class="btn-choose" onclick="handleMovieAction('Обитель зла')">Выбрать этот</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Переключатель мультивыбора -->
+      <label class="multi-toggle-wrap">
+        <span class="switch">
+          <input type="checkbox" id="multi-mode-toggle" onchange="toggleMultiMode(this.checked)">
+          <span class="slider"></span>
+        </span>
+        <span class="toggle-text">Хочу выбрать несколько фильмов ✨</span>
+      </label>
+
+      <!-- Кнопка подтверждения для режима мультивыбора -->
+      <div id="multi-action-bar" class="multi-action-bar hidden">
+        <button id="btn-confirm-movies" class="btn" onclick="confirmMultiSelection()">
+          Идём на эти фильмы (0) 🍿
+        </button>
+      </div>
+    </div>
+
+    <!-- ШАГ 3: Финал -->
+    <div class="card hidden" id="step-finish">
+      <div style="font-size: 52px; margin-bottom: 12px;">🎟️🥳</div>
+      <h1>Договорились!</h1>
+      
+      <!-- Контейнер для выбранных фильмов -->
+      <div class="chosen-badges-wrap" id="chosen-movies-container"></div>
+      
+      <p class="subtitle">С меня билеты, с тебя чипсы и попкорн)</p>
+      
+      <a href="https://t.me/krus_l1ng" target="_blank" class="btn" id="btn-yes" style="text-decoration: none;">
+        Написать в Telegram 💬
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    const stepInvite = document.getElementById('step-invite');
+    const stepMovies = document.getElementById('step-movies');
+    const stepFinish = document.getElementById('step-finish');
+    const btnNo = document.getElementById('btn-no');
+    const btnYes = document.getElementById('btn-yes');
+
+    // Логика убегающей кнопки «Нет» по всей карточке
+    function moveButton() {
+      const card = document.getElementById('step-invite');
+      const padding = 20;
+
+      const maxX = card.clientWidth - btnNo.offsetWidth - padding;
+      const maxY = card.clientHeight - btnNo.offsetHeight - padding;
+
+      let newX = Math.floor(Math.random() * (maxX - padding)) + padding;
+      let newY = Math.floor(Math.random() * (maxY - padding)) + padding;
+
+      // Исключаем наложение на кнопку «Да»
+      const cardRect = card.getBoundingClientRect();
+      const yesRect = btnYes.getBoundingClientRect();
+      const yesLeft = yesRect.left - cardRect.left;
+      const yesTop = yesRect.top - cardRect.top;
+
+      const overlapX = Math.abs(newX - yesLeft) < 110;
+      const overlapY = Math.abs(newY - yesTop) < 55;
+
+      if (overlapX && overlapY) {
+        newY = newY < yesTop ? padding : maxY;
+      }
+
+      btnNo.style.position = 'absolute';
+      btnNo.style.left = `${newX}px`;
+      btnNo.style.top = `${newY}px`;
+      btnNo.style.transform = 'none';
+    }
+
+    btnNo.addEventListener('mouseover', moveButton);
+    btnNo.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      moveButton();
+    });
+
+    // Нажатие на «Да, пойдём!»
+    btnYes.addEventListener('click', () => {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      stepInvite.classList.add('hidden');
+      stepMovies.classList.remove('hidden');
+    });
+
+    // Управление выбором фильмов
+    let isMultiMode = false;
+    const selectedMovies = new Set();
+
+    function toggleMultiMode(enabled) {
+      isMultiMode = enabled;
+      selectedMovies.clear();
+
+      const actionBar = document.getElementById('multi-action-bar');
+      const movieCards = document.querySelectorAll('.movie-card');
+
+      if (isMultiMode) {
+        actionBar.classList.remove('hidden');
+        updateConfirmButton();
+      } else {
+        actionBar.classList.add('hidden');
+      }
+
+      // Обновляем визуальное состояние кнопок и карточек
+      movieCards.forEach(card => {
+        card.classList.remove('selected');
+        const btn = card.querySelector('.btn-choose');
+        btn.textContent = isMultiMode ? 'Выбрать' : 'Выбрать этот';
+      });
+    }
+
+    function handleMovieAction(title) {
+      if (!isMultiMode) {
+        // Одиночный выбор (по умолчанию)
+        finishMovieSelection([title]);
+        return;
+      }
+
+      // Мульти-выбор
+      const card = document.querySelector(`.movie-card[data-title="${title}"]`);
+      const btn = card.querySelector('.btn-choose');
+
+      if (selectedMovies.has(title)) {
+        selectedMovies.delete(title);
+        card.classList.remove('selected');
+        btn.textContent = 'Выбрать';
+      } else {
+        selectedMovies.add(title);
+        card.classList.add('selected');
+        btn.textContent = '✓ Выбрано';
+      }
+
+      updateConfirmButton();
+    }
+
+    function updateConfirmButton() {
+      const confirmBtn = document.getElementById('btn-confirm-movies');
+      const count = selectedMovies.size;
+      confirmBtn.textContent = `Идём на эти фильмы (${count}) 🍿`;
+      confirmBtn.style.opacity = count > 0 ? '1' : '0.6';
+    }
+
+    function confirmMultiSelection() {
+      if (selectedMovies.size === 0) {
+        alert('Выбери хотя бы один фильм :)');
+        return;
+      }
+      finishMovieSelection(Array.from(selectedMovies));
+    }
+
+    // Завершение выбора и переход на 3-й слайд
+    function finishMovieSelection(movieList) {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 100,
+          spread: 90,
+          origin: { y: 0.5 }
+        });
+      }
+
+      // Генерация бейджей выбранных фильмов
+      const container = document.getElementById('chosen-movies-container');
+      container.innerHTML = movieList.map(movie => `
+        <div class="chosen-badge">🍿 ${movie}</div>
+      `).join('');
+
+      stepMovies.classList.add('hidden');
+      stepFinish.classList.remove('hidden');
+      startHearts();
+    }
+
+    // Дождь из сердечек на финальном экране
+    function startHearts() {
+      const container = document.getElementById('step-finish');
+      const symbols = ['💖', '❤️', '💕', '✨', '💗', '🌸'];
+
+      function spawnHeart() {
+        if (container.classList.contains('hidden')) return;
+
+        const heart = document.createElement('div');
+        heart.className = 'heart';
+        heart.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+
+        const size = Math.floor(Math.random() * 16) + 16;
+        const left = Math.floor(Math.random() * 88) + 6;
+        const duration = (Math.random() * 2 + 2.5).toFixed(2);
+        const drift = Math.floor((Math.random() - 0.5) * 80);
+        const rot = Math.floor((Math.random() - 0.5) * 60);
+
+        heart.style.left = `${left}%`;
+        heart.style.fontSize = `${size}px`;
+        heart.style.animationDuration = `${duration}s`;
+        heart.style.setProperty('--drift', `${drift}px`);
+        heart.style.setProperty('--rot', `${rot}deg`);
+
+        container.appendChild(heart);
+
+        setTimeout(() => {
+          heart.remove();
+        }, duration * 1000);
+      }
+
+      for (let i = 0; i < 7; i++) {
+        setTimeout(spawnHeart, i * 160);
+      }
+
+      setInterval(spawnHeart, 350);
+    }
+  </script>
+</body>
+</html>
